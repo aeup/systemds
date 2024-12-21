@@ -78,6 +78,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.MemoryMonitor;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -206,6 +207,8 @@ public class DMLScript
 	 */
 	public static void main(String[] args)
 	{
+		MemoryMonitor memoryMonitor = new MemoryMonitor();
+		new Thread(memoryMonitor).start();
 		try{
 			DMLScript.executeScript(args);
 		} catch(Exception e){
@@ -217,6 +220,7 @@ public class DMLScript
 			}
 			errorPrint(e);
 		}
+		memoryMonitor.stop();
 	}
 
 	/**

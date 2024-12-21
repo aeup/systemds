@@ -20,7 +20,10 @@
 package org.apache.sysds.runtime.util;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
@@ -31,24 +34,36 @@ import org.apache.sysds.runtime.DMLRuntimeException;
  */
 public class MemoryMonitor implements Runnable {
 
+	private static final Log LOG = LogFactory.getLog(MemoryMonitor.class.getName());
+
+	private AtomicBoolean running = new AtomicBoolean(false);
+
+	public void stop() {
+		LOG.info("MemoryMonitor: End");
+		running.set(false);
+	}
+
 	@Override
 	public void run() {
-		while( true ) {
+		running.set(true);
+		LOG.info("MemoryMonitor: Start");
+		while(running.get()) {
 			try {
 				//wait for one second
 				Thread.sleep(1000);
-				
-				//call garbage collection (just a hint) until garbage collection 
+
+				//call garbage collection (just a hint) until garbage collection
 				//was actually trigger as indicated by a cleaned weak reference
 				WeakReference<int[]> wr = new WeakReference<int[]>(new int[1024]);
 				while(wr.get() != null) {
 					System.gc();
 				}
-				
+
 				long mem = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
-				System.out.println("MemoryMonitor: "+ OptimizerUtils.toMB(mem)+" MB used.");
+				LOG.info("MemoryMonitor: "+ OptimizerUtils.toMB(mem)+" MB used.");
 			}
 			catch (InterruptedException e) {
+				LOG.info("MemoryMonitor: End");
 				throw new DMLRuntimeException(e);
 			}
 		}
